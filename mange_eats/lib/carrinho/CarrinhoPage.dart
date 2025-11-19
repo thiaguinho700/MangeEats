@@ -10,6 +10,8 @@ class CarrinhoPage extends StatefulWidget {
 class _CarrinhoPageState extends State<CarrinhoPage> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      // bottomNavigationBar: NavigatorApp(),
+      body: Column());
   }
 }

@@ -12,7 +12,7 @@ class _CardapioPageState extends State<CardapioPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: NavigatorApp(),
+      // bottomNavigationBar: NavigatorApp(),
       body: Column(),
     );
   }

@@ -33,9 +33,9 @@ class _BottomNavBarState extends State<NavigatorApp> {
         children: _widgetOptions,
       ),
       bottomNavigationBar: GNav(
-        backgroundColor: Colors.black,
-        color: Colors.white,
-        activeColor: Colors.black,
+        backgroundColor:  Colors.red.shade400,
+        color: Colors.black,
+        activeColor: Colors.white,
         duration: const Duration(milliseconds: 400),
         tabs: const [
           GButton(icon: Icons.home),
