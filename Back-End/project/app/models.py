@@ -19,8 +19,8 @@ class Cardapio(models.Model):
         return self.nome_prato
 
 class Carrinho(models.Model):
-    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='carrinho')
-
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carrinho')
+    
     def __str__(self):
         return f"Carrinho de {self.usuario.username}"
 
