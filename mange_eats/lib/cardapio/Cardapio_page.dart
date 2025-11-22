@@ -5,10 +5,6 @@ import 'package:mange_eats/carrinho/CarrinhoPage.dart';
 import 'package:mange_eats/provider/bar_provider.dart';
 import 'package:provider/provider.dart';
 
-
-
-
-
 class CardapioPage extends StatefulWidget {
   const CardapioPage({super.key});
 
@@ -17,8 +13,6 @@ class CardapioPage extends StatefulWidget {
 }
 
 class _CardapioPageState extends State<CardapioPage> {
-
-
   final PageController _controller = PageController(viewportFraction: 0.8);
   int _currentPage = 0;
 
@@ -70,13 +64,15 @@ class _CardapioPageState extends State<CardapioPage> {
         future: futurePratos,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.red));
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.red),
+            );
           }
 
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                "Erro ao carregar cardápio",
+                "Erro ao carregar cardápio ${snapshot.error}",
                 style: TextStyle(color: Colors.red),
               ),
             );
@@ -135,7 +131,10 @@ class _CardapioPageState extends State<CardapioPage> {
                           const SizedBox(height: 8),
                           Text(
                             "R\$ ${prato.preco.toStringAsFixed(2)}",
-                            style: const TextStyle(fontSize: 16, color: Colors.red),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.red,
+                            ),
                           ),
                           const SizedBox(height: 12),
 
@@ -149,7 +148,9 @@ class _CardapioPageState extends State<CardapioPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   backgroundColor: Colors.red,
-                                  content: Text("${prato.nome} adicionado ao carrinho!"),
+                                  content: Text(
+                                    "${prato.nome} adicionado ao carrinho!",
+                                  ),
                                   duration: const Duration(seconds: 1),
                                 ),
                               );
@@ -179,7 +180,9 @@ class _CardapioPageState extends State<CardapioPage> {
                     height: 8,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
-                      color: _currentPage == index ? Colors.red : Colors.red.shade200,
+                      color: _currentPage == index
+                          ? Colors.red
+                          : Colors.red.shade200,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -203,14 +206,19 @@ class _CardapioPageState extends State<CardapioPage> {
                         style: const TextStyle(color: Colors.red),
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.add_shopping_cart, color: Colors.red),
+                        icon: const Icon(
+                          Icons.add_shopping_cart,
+                          color: Colors.red,
+                        ),
                         onPressed: () {
                           bag.addItem(prato);
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Colors.red,
-                              content: Text("${prato.nome} adicionado ao carrinho!"),
+                              content: Text(
+                                "${prato.nome} adicionado ao carrinho!",
+                              ),
                               duration: const Duration(seconds: 1),
                             ),
                           );

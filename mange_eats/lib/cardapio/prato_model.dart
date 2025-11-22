@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class CardapioService {
-  static const String baseUrl = "http://127.0.0.1:8000/api/cardapio/";
+  static const String baseUrl = "http://192.168.0.5:8000/api/cardapio/";
 
   static Future<List<PratoModel>> fetchPratos() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -37,7 +37,7 @@ class PratoModel {
       id: json["id"],
       nome: json["nome_prato"],
       descricao: json["descricao"],
-      imagem: "http://127.0.0.1:8000${json["imagem"]}",
+      imagem: json["imagem"],
       preco: double.parse(json["preco"].toString()),
     );
   }
