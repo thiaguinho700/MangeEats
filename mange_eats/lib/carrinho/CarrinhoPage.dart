@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mange_eats/provider/bar_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
@@ -12,6 +12,54 @@ class CarrinhoPage extends StatefulWidget {
 }
 
 class _CarrinhoPageState extends State<CarrinhoPage> {
+  int? carrinhoId;
+  int? usuarioId;
+  List<dynamic> itens = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getCarrinho();
+  }
+
+  Future<void> getCarrinho() async {
+    final urlLogin = Uri.parse('http://10.109.83.25:8000/api/carrinho/');
+    final prefs = await SharedPreferences.getInstance();
+
+    final token = prefs.getString('access_token');
+
+    try {
+      final response = await http.get(
+        urlLogin,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 400) {
+        final data = jsonDecode(response.body);
+
+        // O carrinho está em data["results"][0]
+        final carrinho = data["results"][0];
+
+        setState(() {
+          carrinhoId = carrinho["id"];
+          usuarioId = carrinho["usuario"];
+          itens = carrinho["itens"]; // lista de itens
+        });
+
+        print("Carrinho ID: $carrinhoId");
+        print("Usuário ID: $usuarioId");
+        print("Itens: $itens");
+      } else {
+        print("Erro: ${response.body}");
+      }
+    } catch (e) {
+      print("Exception: $e");
+    }
+  }
+
   final TextEditingController cepController = TextEditingController();
 
   String? rua;
@@ -41,8 +89,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         uf = dados['uf'];
         carregandoCep = false;
       });
-
-      Provider.of<BagProvider>(context, listen: false).calcularTaxa();
     } else {
       setState(() => carregandoCep = false);
     }
@@ -50,37 +96,31 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bag = Provider.of<BagProvider>(context);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red,
         title: const Text("Carrinho", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        
       ),
+
       body: Column(
         children: [
-          // LISTA DE ITENS
+          // LISTA DE ITENS ------------------------------
           Expanded(
             child: ListView.builder(
-              itemCount: bag.itens.length,
+              itemCount: itens.length,
               itemBuilder: (context, index) {
-                final item = bag.itens[index];
+                final item = itens[index];
+
                 return ListTile(
-                  leading: Image.network(item.imagem),
-                  title: Text(item.nome),
-                  subtitle: Text("R\$ ${item.preco.toStringAsFixed(2)}"),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => bag.removeItem(item),
-                  ),
+                  title: Text(item["nome"] ?? "Produto"),
+                  subtitle: Text("R\$ ${item["preco"] ?? "0.00"}"),
                 );
               },
             ),
           ),
 
-          // CAMPO DE CEP
+          // ↓ daqui pra baixo deixei igual ao seu --------------------------
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -93,87 +133,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     border: OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search),
-                      onPressed: buscarCEP,
+                      onPressed: () {},
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                // EXIBE ENDEREÇO
-                if (carregandoCep)
-                  const CircularProgressIndicator(color: Colors.red)
-                else if (rua != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.red),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Rua: $rua"),
-                        Text("Bairro: $bairro"),
-                        Text("Cidade: $cidade - $uf"),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // RODAPÉ DE VALORES
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.red)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total Itens:"),
-                    Text("R\$ ${bag.total.toStringAsFixed(2)}"),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Taxa de Entrega:"),
-                    Text(
-                      "R\$ ${bag.taxaEntrega.toStringAsFixed(2)}",
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ],
-                ),
-                const Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Total Geral:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "R\$ ${(bag.total + bag.taxaEntrega).toStringAsFixed(2)}",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  onPressed: () {},
-                  child: const Text("Finalizar Pedido"),
                 ),
               ],
             ),

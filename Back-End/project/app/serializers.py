@@ -1,4 +1,3 @@
-# serializers.py
 from rest_framework import serializers
 from .models import Carrinho, ItemCarrinho, Cardapio
 
@@ -23,6 +22,7 @@ class ItemCarrinhoWriteSerializer(serializers.ModelSerializer):
 
 
 class CarrinhoSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(read_only=True) 
     itens = ItemCarrinhoSerializer(many=True, read_only=True)
 
     class Meta:

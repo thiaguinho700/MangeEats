@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:mange_eats/login/login_page.dart';
 
 class Cadastro_page extends StatefulWidget {
   const Cadastro_page({super.key});
@@ -13,6 +18,109 @@ class _Cadastro_pageState extends State<Cadastro_page> {
 
   Icon eyeOpenPassword = Icon(Icons.visibility, color: Colors.black);
   Icon eyeClosePassword = Icon(Icons.visibility_off, color: Colors.black);
+
+  final _emailController = TextEditingController();
+  final _nomeController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _passwordNovamenteController = TextEditingController();
+
+  Future<void> criarCarrinho() async {
+    final urlCarrinho = Uri.parse('http://10.109.83.25:8000/api/carrinho/');
+
+    final prefs = await SharedPreferences.getInstance();
+
+    final token = prefs.getString('access_token');
+    final user = prefs.getString('user_data');
+    final userData = json.decode(user!);
+    print(userData);
+    try {
+      final carrinhoResponse = await http.post(
+        urlCarrinho,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"usuario": userData!['username']}),
+      );
+
+      if (carrinhoResponse.statusCode >= 200 &&
+          carrinhoResponse.statusCode < 400) {
+        print("Carrinho criado com sucesso!");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Carrinho criado com sucesso!")),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      } else {
+        print(carrinhoResponse.body);
+        print(carrinhoResponse.statusCode);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Falha ao criar o carrinho!")),
+        );
+      }
+    } catch (e) {
+      print("Erro na criação do carrinho: $e");
+    }
+  }
+
+  Future<void> registerUsuario() async {
+    final urlCadastro = Uri.parse('http://10.109.83.25:8000/api/auth/users/');
+    final urlLogin = Uri.parse('http://10.109.83.25:8000/api/auth/jwt/create/');
+
+    try {
+      final registerResponse = await http.post(
+        urlCadastro,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "username": _nomeController.text.trim(),
+          "email": _emailController.text.trim(),
+          "password": _passwordController.text.trim(),
+        }),
+      );
+
+      if (!(registerResponse.statusCode >= 200 &&
+          registerResponse.statusCode < 400)) {
+        print(registerResponse.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao cadastrar: ${registerResponse.statusCode}"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+
+      final loginResponse = await http.post(
+        urlLogin,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "username": _nomeController.text.trim(),
+          "password": _passwordController.text.trim(),
+        }),
+      );
+
+      print(loginResponse.body);
+      final data = json.decode(loginResponse.body);
+      final accessToken = data['access'];
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_data', json.encode(data));
+      await prefs.setString('access_token', accessToken);
+
+      await criarCarrinho();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Usuário cadastrado com sucesso!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print("Erro no cadastro: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +163,25 @@ class _Cadastro_pageState extends State<Cadastro_page> {
                   ],
                 ),
               ),
+
               Padding(
                 padding: const EdgeInsets.only(top: 20),
                 child: TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    label: Text("Email"),
+                    icon: Icon(Icons.person),
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: TextFormField(
+                  controller: _nomeController,
                   decoration: InputDecoration(
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),
@@ -67,8 +191,10 @@ class _Cadastro_pageState extends State<Cadastro_page> {
                   ),
                 ),
               ),
+
               TextFormField(
                 obscureText: hidePassword,
+                controller: _passwordController,
                 decoration: InputDecoration(
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white),
@@ -84,9 +210,11 @@ class _Cadastro_pageState extends State<Cadastro_page> {
                   ),
                 ),
               ),
+
               Padding(
                 padding: const EdgeInsets.only(top: 20),
                 child: TextFormField(
+                  controller: _passwordNovamenteController,
                   obscureText: hidePassword,
                   decoration: InputDecoration(
                     enabledBorder: UnderlineInputBorder(
@@ -104,13 +232,16 @@ class _Cadastro_pageState extends State<Cadastro_page> {
                   ),
                 ),
               ),
+
               Row(
                 children: [
                   Checkbox(
                     value: checkBox,
-                    onChanged: (bool? value) => {setState(() {
-                      checkBox = value!;
-                    })},
+                    onChanged: (bool? value) => {
+                      setState(() {
+                        checkBox = value!;
+                      }),
+                    },
                     activeColor: Colors.red[400],
                   ),
                   Padding(
@@ -119,12 +250,9 @@ class _Cadastro_pageState extends State<Cadastro_page> {
                   ),
                 ],
               ),
+
               ElevatedButton(
-                onPressed: () {},
-                child: Text(
-                  "Log in",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
+                onPressed: () => registerUsuario(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
                   padding: EdgeInsets.only(
@@ -134,16 +262,28 @@ class _Cadastro_pageState extends State<Cadastro_page> {
                     top: 13,
                   ),
                 ),
+                child: Text(
+                  "Sign in",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
               ),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("Já possui uma conta? "),
-                  Text(
-                    "Log in",
-                    style: TextStyle(
-                      color: Colors.red[400],
-                      fontWeight: FontWeight.w500,
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                    ),
+                    child: Text(
+                      "Log in",
+                      style: TextStyle(
+                        decorationStyle: TextDecorationStyle.solid,
+                        color: Colors.red[400],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],

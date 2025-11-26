@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:mange_eats/cadastro/Cadastro_page.dart';
+import 'package:mange_eats/cardapio/Cardapio_page.dart';
+import 'package:mange_eats/utils/navigator.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +18,45 @@ class _LoginPageState extends State<LoginPage> {
 
   Icon eyeOpenPassword = Icon(Icons.visibility, color: Colors.black);
   Icon eyeClosePassword = Icon(Icons.visibility_off, color: Colors.black);
+
+  final _nomeController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> logInUsuario() async {
+    final urlLogin = Uri.parse('http://10.109.83.25:8000/api/auth/jwt/create/');
+
+    try {
+      final loginResponse = await http.post(
+        urlLogin,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "username": _nomeController.text.trim(),
+          "password": _passwordController.text.trim(),
+        }),
+      );
+
+      if (loginResponse.statusCode >= 200 && loginResponse.statusCode < 400) {
+        print(loginResponse.body);
+        print(loginResponse.statusCode);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Bem-Vindo!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NavigatorApp()),
+        );
+      } else {
+        print(loginResponse.body);
+        print(loginResponse.statusCode);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Falha ao tentar entrar!")),
+        );
+      }
+    } catch (e) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 20,),
+                    SizedBox(height: 20),
                     Text(
                       "Bem-Vindo de volta!",
                       style: TextStyle(
@@ -58,6 +102,7 @@ class _LoginPageState extends State<LoginPage> {
               Padding(
                 padding: const EdgeInsets.only(top: 20),
                 child: TextFormField(
+                  controller: _nomeController,
                   decoration: InputDecoration(
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),
@@ -68,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               TextFormField(
-                
+                controller: _passwordController,
                 obscureText: hidePassword,
                 decoration: InputDecoration(
                   enabledBorder: UnderlineInputBorder(
@@ -87,11 +132,13 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Row(
                 children: [
-                 Checkbox(
+                  Checkbox(
                     value: checkBox,
-                    onChanged: (bool? value) => {setState(() {
-                      checkBox = value!;
-                    })},
+                    onChanged: (bool? value) => {
+                      setState(() {
+                        checkBox = value!;
+                      }),
+                    },
                     activeColor: Colors.red[400],
                   ),
                   Padding(
@@ -101,14 +148,37 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
               ElevatedButton(
-                onPressed: () {},
-                child: Text("Log in", style: TextStyle(color: Colors.white, fontSize: 18)),
+                onPressed: () => logInUsuario(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
-                  padding: EdgeInsets.only(right: 100, left: 100, bottom: 13, top: 13),
+                  padding: EdgeInsets.only(
+                    right: 100,
+                    left: 100,
+                    bottom: 13,
+                    top: 13,
+                  ),
+                ),
+                child: Text(
+                  "Log in",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
-              Row(mainAxisAlignment: MainAxisAlignment.center,children: [Text("Não possui uma conta? "), Text("Registrar", style: TextStyle(color: Colors.red[400], fontWeight: FontWeight.w500),)]),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Não possui uma conta? "),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => Cadastro_page())),
+                    child: Text(
+                      "Registrar",
+                      style: TextStyle(
+                        color: Colors.red[400],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
