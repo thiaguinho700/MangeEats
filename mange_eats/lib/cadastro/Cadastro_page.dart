@@ -25,14 +25,14 @@ class _Cadastro_pageState extends State<Cadastro_page> {
   final _passwordNovamenteController = TextEditingController();
 
   Future<void> criarCarrinho() async {
-    final urlCarrinho = Uri.parse('http://10.109.83.25:8000/api/carrinho/');
+    final urlCarrinho = Uri.parse('http://192.168.0.5:8000/api/carrinho/');
 
     final prefs = await SharedPreferences.getInstance();
 
     final token = prefs.getString('access_token');
     final user = prefs.getString('user_data');
     final userData = json.decode(user!);
-    print(userData);
+
     try {
       final carrinhoResponse = await http.post(
         urlCarrinho,
@@ -45,7 +45,6 @@ class _Cadastro_pageState extends State<Cadastro_page> {
 
       if (carrinhoResponse.statusCode >= 200 &&
           carrinhoResponse.statusCode < 400) {
-        print("Carrinho criado com sucesso!");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Carrinho criado com sucesso!")),
         );
@@ -54,20 +53,17 @@ class _Cadastro_pageState extends State<Cadastro_page> {
           MaterialPageRoute(builder: (context) => LoginPage()),
         );
       } else {
-        print(carrinhoResponse.body);
-        print(carrinhoResponse.statusCode);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Falha ao criar o carrinho!")),
         );
       }
-    } catch (e) {
-      print("Erro na criação do carrinho: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> registerUsuario() async {
-    final urlCadastro = Uri.parse('http://10.109.83.25:8000/api/auth/users/');
-    final urlLogin = Uri.parse('http://10.109.83.25:8000/api/auth/jwt/create/');
+    final urlCadastro = Uri.parse('http://192.168.0.5:8000/api/auth/users/');
+    final urlLogin = Uri.parse('http://192.168.0.5:8000/api/auth/jwt/create/');
+    final urlMe = Uri.parse('http://192.168.0.5:8000/api/auth/users/me/');
 
     try {
       final registerResponse = await http.post(
@@ -82,10 +78,9 @@ class _Cadastro_pageState extends State<Cadastro_page> {
 
       if (!(registerResponse.statusCode >= 200 &&
           registerResponse.statusCode < 400)) {
-        print(registerResponse.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Erro ao cadastrar: ${registerResponse.statusCode}"),
+            content: Text("Erro ao cadastrar: ${registerResponse.body}"),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -101,15 +96,20 @@ class _Cadastro_pageState extends State<Cadastro_page> {
         }),
       );
 
-      print(loginResponse.body);
-      final data = json.decode(loginResponse.body);
-      final accessToken = data['access'];
+      final loginData = json.decode(loginResponse.body);
+      final accessToken = loginData['access'];
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_data', json.encode(data));
       await prefs.setString('access_token', accessToken);
 
-      await criarCarrinho();
+      final meResponse = await http.get(
+        urlMe,
+        headers: {"Authorization": "Bearer $accessToken"},
+      );
+
+      final userData = json.decode(meResponse.body);
+
+      await prefs.setString('user_data', json.encode(userData));
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -117,9 +117,7 @@ class _Cadastro_pageState extends State<Cadastro_page> {
           backgroundColor: Colors.green,
         ),
       );
-    } catch (e) {
-      print("Erro no cadastro: $e");
-    }
+    } catch (e) {}
   }
 
   @override

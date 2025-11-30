@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Carrinho, ItemCarrinho, Cardapio
+from django.contrib.auth.models import User
+    
 
 class CardapioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,19 +14,19 @@ class ItemCarrinhoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ItemCarrinho
-        fields = ['id', 'prato', 'quantidade']
+        fields = '__all__'
 
 
 class ItemCarrinhoWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemCarrinho
-        fields = ['id', 'prato', 'quantidade']
+        fields = '__all__'
 
 
 class CarrinhoSerializer(serializers.ModelSerializer):
-    usuario = serializers.PrimaryKeyRelatedField(read_only=True) 
-    itens = ItemCarrinhoSerializer(many=True, read_only=True)
-
+    usuario = serializers.PrimaryKeyRelatedField(queryset=User.objects.all()) 
+   
     class Meta:
         model = Carrinho
-        fields = ['id', 'usuario', 'itens']
+        fields = '__all__'
+

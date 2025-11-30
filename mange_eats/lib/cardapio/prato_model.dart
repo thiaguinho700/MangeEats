@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class CardapioService {
-  static const String baseUrl = "http://10.109.83.25:8000/api/cardapio/";
+  static const String baseUrl = "http://192.168.0.5:8000/api/cardapio/";
 
   static Future<List<PratoModel>> fetchPratos() async {
     final response = await http.get(Uri.parse(baseUrl));

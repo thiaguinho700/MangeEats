@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
 
@@ -23,14 +22,21 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Future<void> getCarrinho() async {
-    final urlLogin = Uri.parse('http://10.109.83.25:8000/api/carrinho/');
     final prefs = await SharedPreferences.getInstance();
-
     final token = prefs.getString('access_token');
+
+    final user_data = prefs.getString('user_data');
+    final userData = json.decode(user_data!);
+
+    final userId = userData['id']; // já é int
+    print(userId);
+    final urlCarrinho = Uri.parse(
+      'http://192.168.0.5:8000/api/carrinho/?usuario=$userId',
+    );
 
     try {
       final response = await http.get(
-        urlLogin,
+        urlCarrinho,
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -40,20 +46,21 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       if (response.statusCode >= 200 && response.statusCode < 400) {
         final data = jsonDecode(response.body);
 
-        // O carrinho está em data["results"][0]
-        final carrinho = data["results"][0];
+        // ✔️ O retorno é uma lista, então precisamos acessar [0]
+        if (data is List && data.isNotEmpty) {
+          final carrinho = data[0];
+          final carrinhoId = carrinho['id'];
 
-        setState(() {
-          carrinhoId = carrinho["id"];
-          usuarioId = carrinho["usuario"];
-          itens = carrinho["itens"]; // lista de itens
-        });
+          print("Carrinho encontrado: $carrinhoId");
 
-        print("Carrinho ID: $carrinhoId");
-        print("Usuário ID: $usuarioId");
-        print("Itens: $itens");
+          // salvar no prefs
+          await prefs.setInt('carrinho_id', carrinhoId);
+        } else {
+          print(carrinhoId);
+          print("Nenhum carrinho encontrado para o usuário");
+        }
       } else {
-        print("Erro: ${response.body}");
+        print("Erro carrinho: ${response.body}");
       }
     } catch (e) {
       print("Exception: $e");
@@ -99,13 +106,16 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red,
+        leading: IconButton(
+          onPressed: () => getCarrinho(),
+          icon: Icon(Icons.refresh),
+        ),
         title: const Text("Carrinho", style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
 
       body: Column(
         children: [
-          // LISTA DE ITENS ------------------------------
           Expanded(
             child: ListView.builder(
               itemCount: itens.length,
@@ -120,7 +130,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             ),
           ),
 
-          // ↓ daqui pra baixo deixei igual ao seu --------------------------
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

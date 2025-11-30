@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mange_eats/cadastro/Cadastro_page.dart';
-import 'package:mange_eats/cardapio/Cardapio_page.dart';
 import 'package:mange_eats/utils/navigator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,7 +23,8 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   Future<void> logInUsuario() async {
-    final urlLogin = Uri.parse('http://10.109.83.25:8000/api/auth/jwt/create/');
+    final urlLogin = Uri.parse('http://192.168.0.5:8000/api/auth/jwt/create/');
+    
 
     try {
       final loginResponse = await http.post(
@@ -36,14 +37,23 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (loginResponse.statusCode >= 200 && loginResponse.statusCode < 400) {
-        print(loginResponse.body);
-        print(loginResponse.statusCode);
+        final data = jsonDecode(loginResponse.body);
+
+        final accessToken = data["access"];
+        final refreshToken = data["refresh"];
+
+        // 👉 Salvar token no SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("access_token", accessToken);
+        await prefs.setString("refresh_token", refreshToken);
+
+        print("TOKEN SALVO:");
+        print(accessToken);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Bem-Vindo!"),
-            backgroundColor: Colors.green,
-          ),
+          SnackBar(content: Text("Bem-Vindo!"), backgroundColor: Colors.green),
         );
+
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => NavigatorApp()),
@@ -168,7 +178,10 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   Text("Não possui uma conta? "),
                   GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => Cadastro_page())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Cadastro_page()),
+                    ),
                     child: Text(
                       "Registrar",
                       style: TextStyle(

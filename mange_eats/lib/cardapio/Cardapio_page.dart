@@ -28,14 +28,11 @@ class _CardapioPageState extends State<CardapioPage> {
     carregarCarrinho();
   }
 
-  // ---------------------------------------------------------
-  // BUSCAR CARRINHO DO USUÁRIO
-  // ---------------------------------------------------------
   Future<void> carregarCarrinho() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
     print(token);
-    final url = Uri.parse('http://10.109.83.25:8000/api/carrinho/');
+    final url = Uri.parse('http://192.168.0.5:8000/api/carrinho/');
 
     final response = await http.get(
       url,
@@ -55,32 +52,26 @@ class _CardapioPageState extends State<CardapioPage> {
     }
   }
 
-  // ---------------------------------------------------------
-  // ADICIONAR ITEM AO CARRINHO
-  // ---------------------------------------------------------
   Future<void> adicionarItemAoCarrinho(int pratoId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
 
-    // primeiro garante carrinho carregado
     if (carrinhoId == null) {
       await carregarCarrinho();
       if (carrinhoId == null) return;
     }
 
     final url = Uri.parse(
-        'http://10.109.83.25:8000/api/carrinho/$carrinhoId/adicionar/');
+      'http://192.168.0.5:8000/api/itemCarrinho/',
+    );
 
-    final body = jsonEncode({
-      "prato_id": pratoId,
-      "quantidade": 1,
-    });
+    final body = jsonEncode({"prato": pratoId, "quantidade": 1, "carrinho":carrinhoId});
 
     final response = await http.post(
       url,
       headers: {
         "Authorization": "Bearer $token",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: body,
     );
@@ -89,7 +80,6 @@ class _CardapioPageState extends State<CardapioPage> {
 
     if (response.statusCode == 201) {
       await carregarCarrinho();
-      setState(() {});
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -102,9 +92,6 @@ class _CardapioPageState extends State<CardapioPage> {
     }
   }
 
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -138,7 +125,9 @@ class _CardapioPageState extends State<CardapioPage> {
                       child: Text(
                         itens.length.toString(),
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 10),
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ),
@@ -147,13 +136,13 @@ class _CardapioPageState extends State<CardapioPage> {
           ),
         ),
 
-        // ---------------------
         body: FutureBuilder<List<PratoModel>>(
           future: futurePratos,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
-                  child: CircularProgressIndicator(color: Colors.red));
+                child: CircularProgressIndicator(color: Colors.red),
+              );
             }
 
             if (snapshot.hasError) {
@@ -195,24 +184,34 @@ class _CardapioPageState extends State<CardapioPage> {
                           children: [
                             Image.network(prato.imagem, height: 140),
                             const SizedBox(height: 12),
-                            Text(prato.nome,
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold)),
+                            Text(
+                              prato.nome,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 8),
-                            Text("R\$ ${prato.preco.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                    fontSize: 16, color: Colors.red)),
+                            Text(
+                              "R\$ ${prato.preco.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.red,
+                              ),
+                            ),
                             const SizedBox(height: 12),
 
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red),
+                                backgroundColor: Colors.red,
+                              ),
                               onPressed: () async {
                                 await adicionarItemAoCarrinho(prato.id);
                               },
-                              child: const Text("Adicionar ao Carrinho",
-                                  style: TextStyle(color: Colors.white)),
+                              child: const Text(
+                                "Adicionar ao Carrinho",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         ),
@@ -237,8 +236,10 @@ class _CardapioPageState extends State<CardapioPage> {
                           style: const TextStyle(color: Colors.red),
                         ),
                         trailing: IconButton(
-                          icon: const Icon(Icons.add_shopping_cart,
-                              color: Colors.red),
+                          icon: const Icon(
+                            Icons.add_shopping_cart,
+                            color: Colors.red,
+                          ),
                           onPressed: () async {
                             await adicionarItemAoCarrinho(prato.id);
                           },
